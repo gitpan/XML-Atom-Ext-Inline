@@ -22,21 +22,13 @@ Version 0.01
 
 =cut
 
-our $VERSION = '0.01_01';
+our $VERSION = '0.01_02';
 
 BEGIN {
 	XML::Atom::Link->mk_object_accessor(inline => 'XML::Atom::Ext::Inline');
 	no warnings;
 	*XML::Atom::Link::set = sub {XML::Atom::Base::set(@_)}; # hack to eliminate backwards compatibility hack in XML::Atom::Link
 }
-
-sub element_ns {
-	return XML::Atom::Namespace->new(
-		'ae' => q{http://purl.org/atom/ext/}
-	);
-}
-
-sub element_name {'inline'}
 
 =head1 SYNOPSIS
 
@@ -90,21 +82,21 @@ object, into inline element.
 =cut
 
 sub atom {
-	my $obj = shift;
+	my $inline = shift;
 	if (@_) {
 		if ($_[0]->isa('XML::Atom::Feed')) {
 			my ($feed) = @_;
 			my $ns_uri = $feed->{ns};
-			my @elem = childlist($obj->elem, $ns_uri, 'entry');
-			$obj->elem->removeChild($_) for @elem;
-			return $obj->set($ns_uri, 'feed', $feed);
+			my @elem = childlist($inline->elem, $ns_uri, 'entry');
+			$inline->elem->removeChild($_) for @elem;
+			return $inline->set($ns_uri, 'feed', $feed);
 		}
 		elsif ($_[0]->isa('XML::Atom::Feed')) {
 			my ($entry) = @_;
 			my $ns_uri = $entry->{ns}->{uri};
-			my @elem = childlist($obj->elem, $ns_uri, 'feed');
-			$obj->elem->removeChild($_) for @elem;
-			return $obj->set($ns_uri, 'entry', $entry);			
+			my @elem = childlist($inline->elem, $ns_uri, 'feed');
+			$inline->elem->removeChild($_) for @elem;
+			return $inline->set($ns_uri, 'entry', $entry);			
 		}
 		else {
 			my $r = ref $_[0];
@@ -113,19 +105,33 @@ sub atom {
 		}
 	}
 	else {
-		return $obj->get_object('http://www.w3.org/2005/Atom', 'feed', 'XML::Atom::Feed')
-			|| $obj->get_object('http://www.w3.org/2005/Atom', 'entry', 'XML::Atom::Entry');
+		# looking for feed or entry or the same stuff again with old NS URI
+		return $inline->get_object('http://www.w3.org/2005/Atom', 'feed', 'XML::Atom::Feed')
+			|| $inline->get_object('http://www.w3.org/2005/Atom', 'entry', 'XML::Atom::Entry')
+			|| $inline->get_object('http://purl.org/atom/ns#', 'feed', 'XML::Atom::Feed')
+			|| $inline->get_object('http://purl.org/atom/ns#', 'entry', 'XML::Atom::Entry');
 	}
 }
+
+=head2 element_ns
+
+Returns the L<XML::Atom::Namespace> object representing our xmlns:ae="http://purl.org/atom/ext/">.
+
+=cut
+
+sub element_ns {
+	return XML::Atom::Namespace->new(
+		'ae' => q{http://purl.org/atom/ext/}
+	);
+}
+
+sub element_name {'inline'}
 
 =head1 AUTHOR
 
 Dmitri Popov, C<< <operator at cv.dp-net.com> >>
 
 =head1 BUGS
-
-It works with Atom version 1.0 only, e.g. you expected using
-XML::Atom::Entry->new(Version => '1.0'), but it's developer version anyway
 
 Please report more bugs here: L<http://github.com/pin/xml-atom-ext-inline/issues>
 
