@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:               XML-Atom-Ext-Inline
-version:            0.01_02
+version:            0.02
 abstract:           In-lining Extensions for Atom
 author:
     - Dmitri Popov <operator@cv.dp-net.com>
